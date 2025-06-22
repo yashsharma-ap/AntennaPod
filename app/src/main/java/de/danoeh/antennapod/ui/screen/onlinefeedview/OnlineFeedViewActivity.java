@@ -18,6 +18,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.adpushup.apmobilesdk.ApMobileSdk;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import de.danoeh.antennapod.R;
@@ -235,6 +237,10 @@ public class OnlineFeedViewActivity extends AppCompatActivity {
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe(subscribedFeed -> {
             if (subscribedFeed.getState() == Feed.STATE_SUBSCRIBED) {
+                ApMobileSdk.showInterstitialAd(this, "testPlacementId", () -> {
+                    // Do nothing
+                    Log.d(TAG, "Interstitial ad closed");
+                });
                 openFeed(subscribedFeed.getId());
             } else {
                 showFeedFragment(subscribedFeed.getId());

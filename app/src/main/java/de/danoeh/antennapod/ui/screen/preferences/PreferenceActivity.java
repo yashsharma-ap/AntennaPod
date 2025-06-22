@@ -8,8 +8,13 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.FrameLayout;
+
 import androidx.appcompat.app.ActionBar;
 import androidx.preference.PreferenceFragmentCompat;
+
+import com.adpushup.apmobilesdk.ads.ApBanner;
+import com.adpushup.apmobilesdk.interfaces.ApBannerListener;
 import com.bytehamster.lib.preferencesearch.SearchPreferenceResult;
 import com.bytehamster.lib.preferencesearch.SearchPreferenceResultListener;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -31,6 +36,8 @@ import org.greenrobot.eventbus.ThreadMode;
  */
 public class PreferenceActivity extends ToolbarActivity implements SearchPreferenceResultListener {
     private static final String FRAGMENT_TAG = "tag_preferences";
+    private static final String TAG = "PreferenceActivity";
+    private ApBanner apBanner = null;
     public static final String OPEN_AUTO_DOWNLOAD_SETTINGS = "OpenAutoDownloadSettings";
     private SettingsActivityBinding binding;
 
@@ -45,6 +52,7 @@ public class PreferenceActivity extends ToolbarActivity implements SearchPrefere
 
         binding = SettingsActivityBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        showAd();
 
         if (getSupportFragmentManager().findFragmentByTag(FRAGMENT_TAG) == null) {
             getSupportFragmentManager().beginTransaction()
@@ -56,7 +64,54 @@ public class PreferenceActivity extends ToolbarActivity implements SearchPrefere
             openScreen(R.xml.preferences_autodownload);
         }
     }
+    private void showAd() {
+        FrameLayout adFrame = findViewById(R.id.banner_ad_container);
+        apBanner = new ApBanner("testPlacementId");
+        adFrame.addView(apBanner.getAdView(this));
+        apBanner.loadAd(this, new ApBannerListener() {
+            @Override
+            public void onAdClosed() {
+                Log.d(TAG, "onAdClosed");
+                ApBannerListener.super.onAdClosed();
+            }
 
+            @Override
+            public void onAdOpened() {
+                Log.d(TAG, "onAdOpened");
+                ApBannerListener.super.onAdOpened();
+            }
+
+            @Override
+            public void onAdLoaded() {
+                Log.d(TAG, "onAdLoaded");
+                ApBannerListener.super.onAdLoaded();
+            }
+
+            @Override
+            public void onAdClicked() {
+                Log.d(TAG, "onAdClicked");
+                ApBannerListener.super.onAdClicked();
+            }
+
+            @Override
+            public void onAdImpression() {
+                Log.d(TAG, "onAdImpression");
+                ApBannerListener.super.onAdImpression();
+            }
+
+            @Override
+            public void onError(int i, String s) {
+                Log.d(TAG, "onError: code = " + i + ", message = " + s);
+                ApBannerListener.super.onError(i, s);
+            }
+
+            @Override
+            public void onWarning(int i, String s) {
+                Log.d(TAG, "onWarning: code = " + i + ", message = " + s);
+                ApBannerListener.super.onWarning(i, s);
+            }
+        });
+    }
     private PreferenceFragmentCompat getPreferenceScreen(int screen) {
         PreferenceFragmentCompat prefFragment = null;
 
@@ -171,6 +226,12 @@ public class PreferenceActivity extends ToolbarActivity implements SearchPrefere
     protected void onStop() {
         super.onStop();
         EventBus.getDefault().unregister(this);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        apBanner.destroy();
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

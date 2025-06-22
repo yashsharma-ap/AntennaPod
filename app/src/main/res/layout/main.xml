@@ -41,7 +41,6 @@
                 android:visibility="gone"
                 android:fitsSystemWindows="false"
                 app:layout_behavior="de.danoeh.antennapod.ui.view.LockableBottomSheetBehavior" />
-
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
         <androidx.fragment.app.FragmentContainerView
@@ -52,6 +51,11 @@
             android:orientation="vertical" />
 
     </androidx.drawerlayout.widget.DrawerLayout>
+    <FrameLayout
+            android:id="@+id/banner_ad_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|bottom"/>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigationView"

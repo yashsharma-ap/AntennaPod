@@ -972,6 +972,12 @@ public class PlaybackService extends MediaBrowserServiceCompat {
 
         @Override
         public void onPlaybackEnded(MediaType mediaType, boolean stopPlaying) {
+            // Show rewarded ad between episodes
+            if (!stopPlaying) { // Only if continuing to next episode
+                // Send broadcast to MainActivity
+                Intent intent = new Intent("SHOW_REWARDED");
+                sendBroadcast(intent);
+            }
             PlaybackService.this.onPlaybackEnded(mediaType, stopPlaying);
         }
 

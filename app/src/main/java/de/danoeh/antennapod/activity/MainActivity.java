@@ -1,12 +1,17 @@
 package de.danoeh.antennapod.activity;
 
+import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -14,6 +19,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.IdRes;
@@ -33,6 +39,11 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
+
+import com.adpushup.apmobilesdk.ApMobileSdk;
+import com.adpushup.apmobilesdk.ads.ApBanner;
+import com.adpushup.apmobilesdk.interfaces.ApBannerListener;
+import com.adpushup.apmobilesdk.interfaces.ApRewardedListener;
 import com.bumptech.glide.Glide;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
@@ -110,6 +121,7 @@ public class MainActivity extends CastEnabledActivity {
     private RecyclerView.RecycledViewPool recycledViewPool = new RecyclerView.RecycledViewPool();
     private int lastTheme = 0;
     private Insets systemBarInsets = Insets.NONE;
+    private ApBanner apBanner = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -123,7 +135,14 @@ public class MainActivity extends CastEnabledActivity {
         setContentView(R.layout.main);
         recycledViewPool.setMaxRecycledViews(R.id.view_type_episode_item, 25);
         checkFirstLaunch();
-
+        showAd();
+        // Show interstitial on app launch
+        new Handler().postDelayed(() -> {
+            ApMobileSdk.showInterstitialAd(MainActivity.this, "testPlacementId", () -> {
+                // Do nothing
+                Log.d(TAG, "Interstitial ad closed");
+            });
+        }, 10000); // 10 second delay
         drawerLayout = findViewById(R.id.drawer_layout);
         navDrawer = findViewById(R.id.navDrawerFragment);
         bottomNavigation = new BottomNavigation(findViewById(R.id.bottomNavigationView)) {
@@ -250,6 +269,72 @@ public class MainActivity extends CastEnabledActivity {
                 });
     }
 
+    private final BroadcastReceiver interstitialReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ApMobileSdk.showRewardedAd(MainActivity.this, "testPlacementId", new ApRewardedListener() {
+                @Override
+                public void onUserEarnedReward(String type, int amount) {
+                    // Reward User
+                }
+
+                @Override
+                public void onComplete() {
+                    // Do your work after the rewarded ad is closed.
+                }
+            });
+        }
+    };
+
+    private void showAd() {
+        FrameLayout adFrame = findViewById(R.id.banner_ad_container);
+        apBanner = new ApBanner("testPlacementId");
+        adFrame.addView(apBanner.getAdView(this));
+        apBanner.loadAd(this, new ApBannerListener() {
+            @Override
+            public void onAdClosed() {
+                Log.d(TAG, "onAdClosed");
+                ApBannerListener.super.onAdClosed();
+            }
+
+            @Override
+            public void onAdOpened() {
+                Log.d(TAG, "onAdOpened");
+                ApBannerListener.super.onAdOpened();
+            }
+
+            @Override
+            public void onAdLoaded() {
+                Log.d(TAG, "onAdLoaded");
+                ApBannerListener.super.onAdLoaded();
+            }
+
+            @Override
+            public void onAdClicked() {
+                Log.d(TAG, "onAdClicked");
+                ApBannerListener.super.onAdClicked();
+            }
+
+            @Override
+            public void onAdImpression() {
+                Log.d(TAG, "onAdImpression");
+                ApBannerListener.super.onAdImpression();
+            }
+
+            @Override
+            public void onError(int i, String s) {
+                Log.d(TAG, "onError: code = " + i + ", message = " + s);
+                ApBannerListener.super.onError(i, s);
+            }
+
+            @Override
+            public void onWarning(int i, String s) {
+                Log.d(TAG, "onWarning: code = " + i + ", message = " + s);
+                ApBannerListener.super.onWarning(i, s);
+            }
+        });
+    }
+
     @Override
     public void onAttachedToWindow() {
         super.onAttachedToWindow();
@@ -333,6 +418,9 @@ public class MainActivity extends CastEnabledActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (apBanner != null) {
+            apBanner.destroy();
+        }
         if (drawerLayout != null && drawerToggle != null) {
             drawerLayout.removeDrawerListener(drawerToggle);
         }
@@ -443,6 +531,17 @@ public class MainActivity extends CastEnabledActivity {
     }
 
     public void loadFragment(String tag, Bundle args) {
+        ApMobileSdk.showRewardedAd(MainActivity.this, "testPlacementId", new ApRewardedListener() {
+            @Override
+            public void onUserEarnedReward(String type, int amount) {
+                // Reward User
+            }
+
+            @Override
+            public void onComplete() {
+                // Do your work after the rewarded ad is closed.
+            }
+        });
         NavDrawerFragment.saveLastNavFragment(this, tag);
         if (bottomNavigation != null) {
             bottomNavigation.updateSelectedItem(tag);
@@ -571,9 +670,18 @@ public class MainActivity extends CastEnabledActivity {
         getOnBackPressedDispatcher().addCallback(this, bottomSheetBackPressedCallback);
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     @Override
     protected void onResume() {
         super.onResume();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(interstitialReceiver,
+                    new IntentFilter("SHOW_REWARDED"),
+                    Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(interstitialReceiver,
+                    new IntentFilter("SHOW_REWARDED"));
+        }
         handleNavIntent();
 
         boolean hasBottomNavigation = bottomNavigation != null;
@@ -584,6 +692,12 @@ public class MainActivity extends CastEnabledActivity {
         if (UserPreferences.getHiddenDrawerItems().contains(NavDrawerFragment.getLastNavFragment(this))) {
             loadFragment(UserPreferences.getDefaultPage(), null);
         }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(interstitialReceiver);
     }
 
     @Override

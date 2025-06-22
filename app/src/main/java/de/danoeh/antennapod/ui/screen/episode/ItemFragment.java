@@ -16,6 +16,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import com.adpushup.apmobilesdk.ApMobileSdk;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.FitCenter;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
@@ -124,7 +126,10 @@ public class ItemFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        ApMobileSdk.showInterstitialAd(requireActivity(), "testPlacementId", () -> {
+            // Do nothing
+            Log.d(TAG, "Interstitial ad closed");
+        });
         itemId = getArguments().getLong(ARG_FEEDITEM);
     }
 

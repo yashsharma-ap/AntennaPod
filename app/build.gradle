@@ -90,6 +90,7 @@ dependencies {
     implementation project(':playback:service')
     implementation project(':ui:chapters')
     implementation project(':ui:transcript')
+    implementation 'androidx.lifecycle:lifecycle-process:2.9.1'
 
     annotationProcessor "androidx.annotation:annotation:$annotationVersion"
     implementation "androidx.appcompat:appcompat:$appcompatVersion"
@@ -120,6 +121,9 @@ dependencies {
     implementation 'com.github.ByteHamster:SearchPreference:v2.5.0'
     implementation 'com.github.skydoves:balloon:1.5.3'
     implementation 'com.github.xabaras:RecyclerViewSwipeDecorator:1.3'
+
+    implementation 'com.adpushup:apmobilesdk:2.0.2'
+    implementation 'com.google.android.gms:play-services-ads:23.2.0'
 
     testImplementation "androidx.test:core:$testCoreVersion"
     testImplementation "junit:junit:$junitVersion"
